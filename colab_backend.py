@@ -1,15 +1,4 @@
-# ═══════════════════════════════════════════════════════════════════════
-#  RETINA-Path  —  FastAPI Backend v2  (Colab + ngrok)
-#
-#  Changes from v1:
-#  - /predict: uses smooth overlapping sliding window for images >224px
-#    (exact Cell 11 logic: prob_map accumulation + count_map averaging)
-#  - /gallery/{organ_id}: returns random MoNuSeg patch with ground truth,
-#    runs both models, computes real Dice/IoU/HD95 vs GT
-#  - Organ detection from TCGA barcodes in .npz filenames
-#  - All metrics now GT-computed (not hardcoded)
-# ═══════════════════════════════════════════════════════════════════════
-
+import os
 import subprocess
 subprocess.run(["pip", "install", "-q", "fastapi", "uvicorn", "pyngrok",
                 "python-multipart", "ml_collections", "medpy"], check=False)
@@ -26,7 +15,7 @@ from fastapi.responses import JSONResponse
 import uvicorn
 from pyngrok import ngrok
 
-# ── TransUNet imports ────────────────────────────────────────────────
+# TransUNet imports
 if not os.path.exists("/content/TransUNet"):
     print("Cloning TransUNet...")
     subprocess.run(["git","clone","-q","https://github.com/Beckschen/TransUNet.git","/content/TransUNet"])
@@ -36,7 +25,7 @@ if "/content/TransUNet" not in sys.path:
 from networks.vit_seg_modeling import VisionTransformer as ViT_seg
 from networks import vit_seg_configs
 
-# ── Configuration ────────────────────────────────────────────────────
+# Configuration 
 DEVICE       = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 PROJECT_PATH = "/content/drive/MyDrive/Retina_Project_Data"
 BASELINE_WEIGHTS = os.path.join(PROJECT_PATH, "MoNuSeg_Final_Weights", "epoch_99.pth")
@@ -46,7 +35,7 @@ DATA_ZIP         = os.path.join(PROJECT_PATH, "monuseg_patches.zip")
 
 print(f"\nDevice: {DEVICE}")
 
-# ── TCGA barcode → organ mapping (MoNuSeg dataset) ───────────────────
+# TCGA barcode → organ mapping (MoNuSeg dataset)
 TCGA_ORGAN = {
     # Breast
     'TCGA-A7':'breast','TCGA-B6':'breast','TCGA-BH':'breast','TCGA-D8':'breast',
@@ -81,7 +70,7 @@ def detect_organ(filename):
             return organ
     return 'other'
 
-# ── Build organ patch index on startup ───────────────────────────────
+# Build organ patch index on startup
 print("Scanning MoNuSeg patches...")
 
 # Unzip if needed
@@ -98,7 +87,7 @@ for p in ALL_PATCHES:
 
 print(f"Found {len(ALL_PATCHES)} patches across organs: { {k:len(v) for k,v in ORGAN_INDEX.items()} }")
 
-# ── Model builder ─────────────────────────────────────────────────────
+# Model builder 
 def build_transunet():
     config = vit_seg_configs.get_r50_b16_config()
     config.n_skip        = 3
@@ -131,7 +120,7 @@ except Exception as e:
     print(f"⚠  Model loading failed: {e}")
     print("   Running in mock mode.\n")
 
-# ── Pre-processing ────────────────────────────────────────────────────
+# Pre-processing 
 _patch_transform = T.Compose([T.ToTensor()])
 
 def pil_to_tensor(pil_img):
@@ -147,14 +136,14 @@ def preprocess_bytes(img_bytes):
         img = img.resize((224, 224))
     return pil_to_tensor(img), img
 
-# ── Direct inference (224×224 input) ─────────────────────────────────
+# Direct inference (224×224 input)
 def run_inference(model, tensor):
     """Returns (224,224) uint8 binary mask: 1=nucleus, 0=background."""
     with torch.no_grad():
         out = model(tensor)
         return torch.argmax(torch.softmax(out, dim=1), dim=1).squeeze(0).cpu().numpy().astype(np.uint8)
 
-# ── Smooth overlapping sliding window (exact Cell 11 logic) ──────────
+# Smooth overlapping sliding window (exact Cell 11 logic) 
 def run_smooth_sliding_window(model, pil_img, patch_size=224, stride=112):
     """
     Mirrors Phase 3 Cell 11 exactly:
@@ -213,7 +202,6 @@ def mask_to_binary_b64(mask):
     Image.fromarray(grayscale, "L").save(buf, format="PNG")
     return base64.b64encode(buf.getvalue()).decode()
 
-# Keep old name as alias for backward compatibility
 def mask_to_rgba_b64(mask, rgb=(0, 201, 177)):
     return mask_to_binary_b64(mask)
 
@@ -235,7 +223,7 @@ def img_array_to_b64(img_chw):
     Image.fromarray(arr, "RGB").save(buf, format="JPEG", quality=88)
     return base64.b64encode(buf.getvalue()).decode()
 
-# ── Metric computation vs ground truth ───────────────────────────────
+#  Metric computation vs ground truth 
 def compute_metrics(pred, gt):
     """Compute Dice, IoU, HD95 and nuclei count vs ground truth."""
     pred_b = pred.astype(bool)
@@ -267,7 +255,7 @@ def compute_metrics(pred, gt):
         "cell_count": cell_count,
     }
 
-# ── Mock mask (demo/fallback mode) ────────────────────────────────────
+# Mock mask (demo/fallback mode) 
 def mock_mask(seed=42, tighter=False):
     mask = np.zeros((224, 224), dtype=np.uint8)
     rng  = np.random.default_rng(seed)
@@ -279,17 +267,16 @@ def mock_mask(seed=42, tighter=False):
         mask[(((X-cx)/max(rx,1))**2 + ((Y-cy)/max(ry,1))**2) <= 1] = 1
     return mask
 
-# ── FastAPI app ───────────────────────────────────────────────────────
+# FastAPI app 
 app = FastAPI(title="RETINA-Path API v2", version="2.0")
 
-# Enhanced CORS for ngrok tunneling + local development
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"],  # Expose all headers including ngrok-error-code
+    expose_headers=["*"],  
 )
 
 @app.get("/health")
@@ -431,13 +418,13 @@ async def gallery_patch(organ_id: str):
         },
     })
 
-# ── Start server + ngrok ──────────────────────────────────────────────
+# Start server + ngrok 
 def run_server():
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="warning")
 
 ngrok.kill()
-# Uncomment to use your ngrok auth token for persistent sessions:
-ngrok.set_auth_token("3BOWA5BPpetW3JIeEafs9ZdFvXU_4BVG6HoU6CRyBhNXe8zkq")
+NGROK_TOKEN = os.getenv("NGROK_TOKEN")
+ngrok.set_auth_token(NGROK_TOKEN)
 public_url = ngrok.connect(8000)
 
 server_thread = threading.Thread(target=run_server, daemon=True)
@@ -445,7 +432,7 @@ server_thread.start()
 time.sleep(2)
 
 print("\n" + "="*62)
-print("  ✓  RETINA-Path API v2 is live!")
+print("   RETINA-Path API v2 is live!")
 print(f"  Public URL  :  {public_url}")
 print(f"  Health      :  {public_url}/health")
 print(f"  Organs      :  {public_url}/gallery/organs")

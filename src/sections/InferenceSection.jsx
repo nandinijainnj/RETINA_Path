@@ -5,15 +5,13 @@ import GalleryPanel from './GalleryPanel'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
-// ── Demo fallback metrics (paper values, used only when no backend) ───
+// Demo fallback metrics
 const DEMO_METRICS = {
   baseline: { dice: 0.8734, iou: 0.7783, hd95: 7.15,  cell_count: 38 },
   retina:   { dice: 0.9222, iou: 0.8562, hd95: 2.63,  cell_count: 41 },
 }
 
-// ── Compare slider (clip-path approach — no scaling bugs) ─────────────
-// Left side = Baseline B&W mask, Right side = RETINA B&W mask
-// Both are plain <img> tags at identical size; clip-path trims the top layer.
+// Compare slider
 function CompareSlider({ baselineMask, retinaMask }) {
   const containerRef = useRef(null)
   const [pos, setPos]   = useState(50)
@@ -98,10 +96,7 @@ function CompareSlider({ baselineMask, retinaMask }) {
   )
 }
 
-// ── Three-panel result display ─────────────────────────────────────────
-// Panel 1: Original H&E
-// Panel 2: Baseline binary mask (white on black)
-// Panel 3: RETINA binary mask (white on black)
+// Three-panel result display
 function ThreePanelMasks({ imageDataUrl, baselineMask, retinaMask }) {
   const panels = [
     { src: imageDataUrl,  label: 'H&E input',          color: 'text-muted/70',  border: 'border-border' },
@@ -124,7 +119,7 @@ function ThreePanelMasks({ imageDataUrl, baselineMask, retinaMask }) {
   )
 }
 
-// ── Upload zone ───────────────────────────────────────────────────────
+// Upload zone
 function UploadZone({ onImage }) {
   const onDrop = useCallback(([file]) => {
     if (!file) return
@@ -160,7 +155,7 @@ function UploadZone({ onImage }) {
   )
 }
 
-// ── Scanning loader ───────────────────────────────────────────────────
+// Scanning loader
 function ScanningLoader({ message }) {
   return (
     <div className="relative w-full h-40 rounded-2xl overflow-hidden border border-teal/20 bg-subtle flex flex-col items-center justify-center gap-3">
@@ -178,7 +173,7 @@ function ScanningLoader({ message }) {
   )
 }
 
-// ── Sliding window tile progress ──────────────────────────────────────
+// Sliding window tile progress
 function SlidingWindowProgress({ tiles, activeTile, done }) {
   if (!tiles.length) return null
   const cols = Math.max(...tiles.map(t => t.col), 0) + 1
@@ -222,7 +217,7 @@ function SlidingWindowProgress({ tiles, activeTile, done }) {
   )
 }
 
-// ── Metric row ────────────────────────────────────────────────────────
+// Metric row
 function MetricRow({ label, baseline, retina, unit='', lowerIsBetter=false }) {
   const rBetter = lowerIsBetter ? retina < baseline : retina > baseline
   return (
@@ -241,7 +236,7 @@ function MetricRow({ label, baseline, retina, unit='', lowerIsBetter=false }) {
   )
 }
 
-// ── Tile plan computation ─────────────────────────────────────────────
+//Tile plan computation
 function computeTiles(W, H, patchSize=224, stride=112) {
   const tiles = []
   let row = 0
@@ -256,7 +251,7 @@ function computeTiles(W, H, patchSize=224, stride=112) {
   return tiles
 }
 
-// ── Main section ──────────────────────────────────────────────────────
+// Main section
 export default function InferenceSection() {
   const [apiUrl, setApiUrl]         = useState(API_URL)
   const [imageDataUrl, setImageUrl] = useState(null)
@@ -344,7 +339,6 @@ export default function InferenceSection() {
       setResults({
         baseline:      data.baseline,
         retina:        data.retina,
-        // Backend returns pure binary grayscale PNGs (white=nucleus, black=bg)
         baseline_mask: `data:image/png;base64,${data.baseline.mask_b64}`,
         retina_mask:   `data:image/png;base64,${data.retina.mask_b64}`,
         demo: false,

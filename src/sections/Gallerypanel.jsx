@@ -10,7 +10,7 @@ const ORGANS = [
   { id:'bladder',  label:'Bladder'  },
 ]
 
-// ── Pure B&W mask display panel ───────────────────────────────────────
+// Pure B&W mask display panel 
 function MaskPanel({ imageSrc, maskSrc, label, color, border }) {
   return (
     <div className={`rounded-xl border overflow-hidden ${border}`}>
@@ -25,7 +25,7 @@ function MaskPanel({ imageSrc, maskSrc, label, color, border }) {
   )
 }
 
-// ── H&E original panel ────────────────────────────────────────────────
+// H&E original panel 
 function HEPanel({ imageSrc }) {
   return (
     <div className="rounded-xl border border-border overflow-hidden">
@@ -38,12 +38,9 @@ function HEPanel({ imageSrc }) {
 }
 
 function MetricRow({ label, baseline, retina, unit = '', lowerIsBetter = false, forceBetter = null }) {
-  // 1. Check if RETINA is better. If forceBetter is provided, use that instead.
   const rBetter = forceBetter !== null 
     ? forceBetter 
     : (lowerIsBetter ? retina < baseline : retina > baseline);
-
-  // 2. Determine arrow direction (point down if lowerIsBetter is true OR if the value literally decreased)
   const arrow = (lowerIsBetter || retina < baseline) ? '↓' : '↑';
 
   return (
@@ -96,7 +93,7 @@ export default function GalleryPanel({ apiUrl }) {
     }
 
     try {
-      // Check if v2 backend is running by hitting the gallery endpoint
+      // Check if backend is running by hitting the gallery endpoint
       const resp = await fetch(`${validUrl}gallery/${organId}`, {
         method: 'GET',
         headers: {
@@ -107,7 +104,6 @@ export default function GalleryPanel({ apiUrl }) {
       })
 
       if (resp.status === 404) {
-        // Old backend — /gallery endpoint doesn't exist
         setError('old_backend')
         return
       }

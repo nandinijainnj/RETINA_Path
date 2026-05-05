@@ -9,7 +9,7 @@ export function useCountUp(target, duration = 1600, isActive = false, decimals =
     const animate = (ts) => {
       if (!startTime) startTime = ts
       const progress = Math.min((ts - startTime) / duration, 1)
-      const ease = 1 - Math.pow(1 - progress, 3) // ease-out-cubic
+      const ease = 1 - Math.pow(1 - progress, 3) 
       setValue(parseFloat((startVal + (target - startVal) * ease).toFixed(decimals)))
       if (progress < 1) requestAnimationFrame(animate)
       else setValue(target)

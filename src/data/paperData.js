@@ -1,4 +1,4 @@
-// All quantitative results from the RETINA-Path paper (Table 1, Figs 6-9)
+// All quantitative results from the RETINA-Path paper
 
 export const PERFORMANCE_TABLE = [
   { split: '10%',  baseline_dice: 0.7313, retina_dice: 0.7611, baseline_iou: 0.5822, retina_iou: 0.6204, baseline_hd95: 15.37, retina_hd95: 13.68 },
@@ -6,7 +6,7 @@ export const PERFORMANCE_TABLE = [
   { split: '100%', baseline_dice: 0.8734, retina_dice: 0.9222, baseline_iou: 0.7783, retina_iou: 0.8562, baseline_hd95: 7.15,  retina_hd95: 2.63  },
 ]
 
-// Data efficiency curve (Fig 7) — interpolated for smooth chart
+// Data efficiency curve (Fig 7) 
 export const EFFICIENCY_CURVE = [
   { pct: 10,  baseline: 0.731, retina: 0.761 },
   { pct: 20,  baseline: 0.756, retina: 0.769 },
@@ -44,7 +44,7 @@ export const HERO_STATS = [
   { label: 'Low-data Dice',     value: '0.761',  unit: '10%',  color: 'amber',  detail: 'With 10% labels' },
 ]
 
-// Methodology phases (Idea 16)
+// Methodology phases 
 export const METHODOLOGY_PHASES = [
   {
     id: 1,
@@ -93,7 +93,7 @@ export const METHODOLOGY_PHASES = [
   },
 ]
 
-// Architecture steps (Idea 13)
+// Architecture steps 
 export const ARCHITECTURE_STEPS = [
   {
     id: 1,
